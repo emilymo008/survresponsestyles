@@ -94,7 +94,7 @@ Next, we fit individual models (see Table 2 in appendix) on the data for each le
 #### Individual models by skew, with just percent contamination as predictor ####
 skew1a <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -1,])
 skew1b <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -0.8,])
-skew1c <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -0.6,]) # cubic terms now have higher pvals
+skew1c <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -0.6,]) 
 skew1d <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -0.4,])
 skew1e <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == -0.2,])
 skew1f <- lm(post.trt ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5[mdf5$shift == 0,]) 
@@ -116,7 +116,6 @@ colnames(skew1_se) <- c('skew', 'int', 'lin', 'quad', 'cub')
 skew1_tbl <- cbind(seq(-1, 1, 0.2), (paste(as.matrix(skew1_coeff[,2:ncol(skew1_coeff)]) %>% formatC(digits = 3), ' (', 
                                            as.matrix(skew1_se[2:ncol(skew1_coeff)]) %>% formatC(digits = 3), ')', sep = '') %>% 
                                        matrix(nrow = nrow(skew1_coeff)))) %>% as.data.frame()
-# colnames(skew1_tbl) <- c('Skew', 'Intercept', 'P', 'P^2', 'P^3')  
 colnames(skew1_tbl) <- c('Skewness', 'Intercept', '10\\% Contamination', '10\\% Contamination$^2$', '10\\% Contamination$^3$')
 
 ```
@@ -188,7 +187,6 @@ colnames(skew2_se) <- c('skew', 'int', 'pct_lin', 'pct_quad', 'pct_cub', 'gran5'
 skew2_tbl <- cbind(seq(-1, 1, 0.2), (paste(as.matrix(skew2_coeff[,2:ncol(skew2_coeff)]) %>% round(5), ' (', 
                                            as.matrix(skew2_se[2:ncol(skew2_coeff)]) %>% round(5), ')', sep = '') %>% 
                                        matrix(nrow = nrow(skew2_coeff))))
-# colnames(skew2_tbl) <- c('skew', 'int', 'pct_lin', 'pct_quad', 'pct_cub', 'gran5', 'gran6', 'gran7', 'gran11', 'pctXgran5', 'pctXgran6', 'pctXgran7', 'pctXgran11')
 colnames(skew2_tbl) <- c('Skewness' , 'Intercept', '10\\% Contamination', '10\\% Contamination$^2$', '10\\% Contamination$^3$',
                          'Likert Granularity = 5', 'Likert Granularity = 6', 'Likert Granularity = 7', 'Likert Granularity = 11',
                          '10\\% Contam. $\\times$ Gran. 5', '10\\% Contam. $\\times$ Gran. 6', '10\\% Contam. $\\times$ Gran. 7', 
@@ -204,7 +202,7 @@ Based on Figure 2, the models’ estimated difference in treatment effect compar
 From Figure 2, we can also see that within each granularity level, the influence of skewness on the effect of granularity appears to reverse as percent contamination increases: at low contamination levels, models fitted on higher-skewed data tend to identify a fixed granularity level of 5, 6, 7, or 11 as being associated with a less negative expected difference in estimated treatment effect from a granularity level of 4, compared to the models fitted on lower-skewed data. However, once percent contamination increases past a certain point (in this case, around 30% contamination), that relationship seems to get inverted due to an apparent interaction between skewness and percent contamination, and so models fitted on higher-skewed data now begin to identify a fixed granularity level of 5, 6, 7, or 11 as being associated with a more negative expected difference in estimated treatment effect from a granularity level of 4, compared to the models fitted on lower-skewed data. Therefore, at lower skewness magnitudes, there appears to be less of a difference in the effects of different granularity levels.
 
 ```{r}
-#### Plot of effect of gran for various pct levels, grouped color-wise by shift (a.k.a. the model where the effect came from)
+#### Plot of effect of gran for various pct levels, grouped color-wise by shift
 # transform table so there's a row per gran level (5, 6, 7, 11) per skew model
 skew2_tbl_pivot <- pivot_longer(skew2_coeff, cols = starts_with('gran'), names_to = 'gran', values_to = 'gran_coef', 
                                 names_prefix = 'gran') %>%  
@@ -218,6 +216,7 @@ skew2_tbl_pivot <- pivot_longer(skew2_coeff, cols = starts_with('gran'), names_t
     effect_pct0 = gran_coef + pctXgran_coef*0
   )
 
+# Positive skews only
 ## PCT = 0.4
 pct40 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at one side of the skew
                 aes(x = as.integer(gran), y = effect_pct40, color = as.factor(skew))) + 
@@ -227,7 +226,7 @@ pct40 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at
   ylim(-0.05, 0.01)
 
 ## PCT = 0.3
-pct30 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at one side of the skew
+pct30 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  
                 aes(x = as.integer(gran), y = effect_pct30, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 30 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -235,7 +234,7 @@ pct30 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at
   ylim(-0.05, 0.01)
 
 ## PCT = 0.2
-pct20 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at one side of the skew
+pct20 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  
                 aes(x = as.integer(gran), y = effect_pct20, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 20 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -243,7 +242,7 @@ pct20 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at
   ylim(-0.05, 0.01)
 
 ## PCT = 0.1
-pct10 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at one side of the skew
+pct10 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0), 
                 aes(x = as.integer(gran), y = effect_pct10, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.5, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 10 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -251,16 +250,16 @@ pct10 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at
   ylim(-0.05, 0.01)
 
 ## PCT = 0
-pct0 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0),  # only looking at one side of the skew
+pct0 <- ggplot(data = skew2_tbl_pivot %>% filter(skew >= 0), 
                aes(x = as.integer(gran), y = effect_pct0, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.5, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 0 Percent Contamination', width = 30)) + xlab('Granularity') +
   scale_colour_manual(name="Skew", values = c('orangered', 'coral', 'orange', 'darkgoldenrod1', 'gold1', 'springgreen4')) +
   ylim(-0.05, 0.01)
 
-# Negative side
+# Negative skews only
 ## PCT = 0.4
-pct40neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking at one side of the skew
+pct40neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0), 
                    aes(x = as.integer(gran), y = effect_pct40, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 40 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -268,7 +267,7 @@ pct40neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking
   ylim(-0.05, 0.01)
 
 ## PCT = 0.3
-pct30neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking at one side of the skew
+pct30neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  
                    aes(x = as.integer(gran), y = effect_pct30, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 30 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -276,7 +275,7 @@ pct30neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking
   ylim(-0.05, 0.01)
 
 ## PCT = 0.2
-pct20neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking at one side of the skew
+pct20neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),
                    aes(x = as.integer(gran), y = effect_pct20, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 20 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -284,7 +283,7 @@ pct20neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking
   ylim(-0.05, 0.01)
 
 ## PCT = 0.1
-pct10neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking at one side of the skew
+pct10neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0), 
                    aes(x = as.integer(gran), y = effect_pct10, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 10 Percent Contamination', width = 30)) + xlab('Granularity') +
@@ -292,14 +291,14 @@ pct10neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking
   ylim(-0.05, 0.01)
 
 ## PCT = 0
-pct0neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0),  # only looking at one side of the skew
+pct0neg <- ggplot(data = skew2_tbl_pivot %>% filter(skew <= 0), 
                   aes(x = as.integer(gran), y = effect_pct0, color = as.factor(skew))) + 
   geom_point(size = 5, alpha = 0.4, stroke = 0) +
   ylab(str_wrap('Effect of Granularity with 0 Percent Contamination', width = 30)) + xlab('Granularity') +
   scale_colour_manual(name="Skew", values = rev(c('orangered', 'coral', 'orange', 'darkgoldenrod1', 'gold1', 'springgreen4'))) +
   ylim(-0.05, 0.01)
 
-# plot together:
+#### plot together:
 granmtxplot <- plot_grid(pct0, pct10, pct20, pct30, pct40, pct0neg, pct10neg, pct20neg, pct30neg, pct40neg, ncol = 5, nrow = 2)
 ```
 
@@ -317,7 +316,7 @@ The standard error of the estimated treatment effect is also computed within the
 
 ```{r}
 #### SE models ####
-stde2 <- lm(post.trt.se ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5)  # **** just used this one
+stde2 <- lm(post.trt.se ~ pct_10 + I(pct_10^2) + I(pct_10^3), data = mdf5)  
 ```
 
 The results of this model suggest that without controlling for other factors such as skewness and granularity, the standard error of the estimated treatment effect generally widens as percent contamination increases—for our data, the model’s expected standard error grew from about 0.045 under no contamination to about 0.048 under 40% contamination. Although the cubic model fits a slight curve to the data, the trajectory of the expected standard error as percent contamination increases is roughly linear. The residuals of this model appeared trendless, and adding terms for skewness and Likert granularity to the model yielded relatively small effect sizes despite low p-values, so we did not further consider models with these additional terms. A general increase in standard error is unsurprising as the response style becomes more prominent, because the response style brings an increased variation in the Likert-type responses resulting from the response style, which is expected to negatively impact the certainty of the treatment’s effect on the post-intervention survey. Combining this result with our analysis of the Exclusive Extreme response style’s impact on treatment effect estimate itself, we find that as the response style becomes more prominent, we become increasingly uncertain of the estimated treatment effect, which itself becomes increasingly biased.  
